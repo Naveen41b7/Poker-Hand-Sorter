@@ -1,355 +1,292 @@
-from collections import defaultdict
-import sys
+# importing sys for reading a file
+import sys 
+
+# Suit Types -> D - Diamonds, H - Hearts, S - Spades, C - Clubs
+ 
+# Store the list of values of card from lowest value to highest value
+pokerCards = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+
+# Initialize global variables of both players winning game count
+# Increment values of below variables determining which player won
+player1won = 0
+player2won = 0
+
+# If both the players get tie, use this variable to determine which player is winner
+playersTiedValue = 0
 
 
-def one_pair(hand):
+def getCardsValueIndex(fiveCards):
+    cardsList = getCardsList(fiveCards)
+    cardValueIndex = []
+    for cardValue in cardsList:
+        cardValueIndex.append(pokerCards.index(cardValue[0]))
+    
+    return sorted(cardValueIndex, reverse=True)
 
-    """This funtion will check whether a pair exist in the hand or not.
-    It will give 2 outputs, the first one is a boolean value and the second one is the pair value (if it exists)"""
 
-    values = [v[0] for v in hand]
-    value_counter = defaultdict(lambda: 0)
-    for i in values:
-        value_counter[i] += 1
-    key_list = list(value_counter.keys())
-    val_list = list(value_counter.values())
-    if 2 in value_counter.values():
-        return True, key_list[val_list.index(2)]
+# Gets the cards of single player as sorted/unsorted list based on isSort param
+def getCardsList(fiveCards, isSort = False):
+    if isSort:
+        return sorted(fiveCards.split( ))
     else:
-        return False, None
+        return fiveCards.split( )
 
 
-def two_pairs(hand):
+# Gets only the value(number) of cards of single player
+def getCardsValues(fiveCards):
+    values = []
+    for card in fiveCards.split( ):
+        values.append(card[0:1])
+        
+    return values
 
-    """This funtion will check whether there are two set of pairs in the hand or not.
-    It will give 3 outputs, the first one is a boolean value, the second one is a list of 2 values whose pair exist in the hand and finally the 3rd output is a number whose pair doesn't exist."""
 
-    pairs = []
-    non_pair_value = 0
-    values = [v[0] for v in hand]
-    value_counter = defaultdict(lambda: 0)
-    for i in values:
-        value_counter[i] += 1
-    key_list = list(value_counter.keys())
-    val_list = list(value_counter.values())
-    # For loop below finds the card's which form a pair in this hand
-    for i in range(len(val_list)):
-        if val_list[i] == 2:
-            pairs.append(key_list[i])
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S KS QS JS TS AS
+# Test case fail(player2) - AH 9S 4D TD 8S KS QD JC TD AC
+def isRoyalFlush(fiveCards):
+    # T - Ten,  J - Jack, Q - Queen, K - King, A - Ace
+    rfList = ['T', 'J', 'Q', 'K', 'A']
+    firstSuit = fiveCards[1:2]
+    isRf = 10
+    for rf in rfList:
+        if fiveCards.count(firstSuit) != 5 or fiveCards.find(rf) == -1:
+            isRf = -1
+            break
+            
+    return isRf
+
+ 
+
+# Test case pass(player2) - AH 9S 4D TD 8S AH 4H AH AH AH
+# Test case fail(player2) - AH 9S 4D TD 8S 4H 3H 6H 7H 5H
+def isFourKind(fiveCards):
+    fourKind = -1
+    noDuplicateList = list(dict.fromkeys(getCardsValues(fiveCards)))
+    # print(noDuplicateList)
+    if (len(noDuplicateList) == 2 and isThreeKind(fiveCards) != 4):
+        fourKind = 8
+    
+    return fourKind
+
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S AH 4H AH AH AH
+# Test case fail(player2) - AH 9S 4D TD 8S 4H 3H 6H 7H 5H
+def isFlush(fiveCards):
+    firstSuit = fiveCards[1:2]
+    isFlush = -1
+
+    if fiveCards.count(firstSuit) == 5:
+        isFlush = 6
+            
+    return isFlush
+
+ 
+
+# Test case pass(player2) - AH 9S 4D TD 8S 4H 3H 6H 7H 5H
+# Test case fail(player2) - AH 9S 4D TD 8S AH 4H AH AH AH  
+def isStraight(fiveCards):
+    counter = pokerCards.index(fiveCards[0][0:1])
+    isStraight = 5
+
+    for card in fiveCards:
+        # print(card[0] + '====' + pokerCards[counter])
+        if counter > 12 or card[0] != pokerCards[counter]:
+            isStraight = -1
+            break
+            
+        counter += 1
+    return isStraight
+
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S 4H 3H 6H 7H 5H
+# Test case fail(player2) - AH 9S 4D TD 8S KH JS QC TC 8D
+def isStraightFlush(fiveCards):
+    isStraightFlush = -1
+    fiveCardsList = getCardsList(fiveCards)
+
+    if isFlush(fiveCards) == 6 and isStraight(fiveCardsList) == 5:
+        isStraightFlush = 9
+    
+    return isStraightFlush
+
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S 2S 2H 3H 3C AD
+# Test case fail(player2) - AH 9S 4D TD 8S 4D 3H 6S 7C 5S
+def isTwoPairs(fiveCards):
+    global playersTiedValue
+    cardsList = getCardsValues(fiveCards)
+    twoPairs = -1
+    duplicateList = list([card for card in cardsList if cardsList.count(card) in range(2, 3)])
+    duplicateList = list(dict.fromkeys(duplicateList))
+
+    # print(duplicateList)
+    if (len(duplicateList) == 2):
+        playersTiedValue = max(pokerCards.index(duplicateList[0]), pokerCards.index(duplicateList[1]))
+        twoPairs = 3
+        
+    return twoPairs
+
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S 3S 4H 3H AD 8C
+# Test case fail(player2) - AH 9S 4D TD 8S 4D 3H 4S 7C 4S  
+def isPair(fiveCards):
+    global playersTiedValue
+    cardsList = getCardsValues(fiveCards)
+    pair = -1
+    duplicateList = list([card for card in cardsList if cardsList.count(card) in range(2, 3)])
+    duplicateList = list(dict.fromkeys(duplicateList))
+    
+    # print(duplicateList)
+    if (len(duplicateList) == 1):
+        playersTiedValue = pokerCards.index(duplicateList[0])
+        pair = 2
+    
+    return pair
+
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S 3S 4H 3H AD 3C
+# Test case fail(player2) - AH 9S 4D TD 8S 4D 3H 6S 7C 5S    
+def isThreeKind(fiveCards):
+    threeKind = -1
+    noDuplicateList = list(dict.fromkeys(getCardsValues(fiveCards)))
+    
+    if (len(noDuplicateList) in range(2, 4) and isTwoPairs(fiveCards) != 3):
+        threeKind = 4
+    
+    return threeKind
+
+
+
+# Test case pass(player2) - AH 9S 4D TD 8S 3S 3H 3H AD AC
+# Test case fail(player2) - AH 9S 4D TD 8S 3D 3H 4S 6C 4S 
+def isFullHouse(fiveCards):
+    global playersTiedValue
+    fullHouse = -1
+    cardsList = getCardsValues(fiveCards)
+    
+    if (isThreeKind(fiveCards) == 4 and isPair(fiveCards) == 2):
+        fullHouse = 7
+    
+    for card in cardsList:
+        if cardsList.count(card) == 3:
+            playersTiedValue = pokerCards.index(card)
+            break
+    
+    return fullHouse
+
+
+
+# Test case pass1(player2) - AH 9S 4D TD 8S 4H 4C 6S 7S KD
+# Test case pass2(player2) - AH 9S 4D TD 8S 2C 3S 9S 9D TD
+def getHighCard(fiveCards):
+    global playersTiedValue
+    valueIndexList = getCardsValueIndex(fiveCards)
+
+    return max(valueIndexList)
+
+
+
+
+def highCardTieBreaker(p1list, p2list):
+    global player1won, player2won
+    for c1, c2 in zip(p1list, p2list):
+        if (c1 == c2):
+            continue
+        elif (c1 > c2):
+            player1won += 1
+            break
         else:
-            non_pair_value = key_list[i]
-    if sorted(value_counter.values()) == [1, 2, 2]:
-        return True, pairs, non_pair_value
+            player2won += 1
+            break
+
+
+
+
+# function to decide winner from 2 players
+def getRankofPlayer(fiveCards):
+    playerRank = -1
+    if (isRoyalFlush(fiveCards) == 10):
+        playerRank = 100
+    elif (isStraightFlush(fiveCards) == 9):
+        playerRank = 90
+    elif (isFourKind(fiveCards) == 8):
+        playerRank = 80
+    elif (isFullHouse(fiveCards) == 7):
+        playerRank = 70
+    elif (isFlush(fiveCards) == 6):
+        playerRank = 60
+    elif (isStraight(getCardsList(fiveCards, True)) == 5):
+        playerRank = 50
+    elif (isThreeKind(fiveCards) == 4):
+        playerRank = 40
+    elif (isTwoPairs(fiveCards) == 3):
+        playerRank = 30
+    elif (isPair(fiveCards) == 2):
+        playerRank = 20
     else:
-        return False, None, None
+        playerRank = getHighCard(fiveCards)
+        
+    return playerRank
 
 
-def three_of_kind(hand):
 
-    """This funtion will check whether a Three of a kind is present in the hand or not.
-    It will give 2 outputs, the first one is a boolean value and the second one is the card value whose Three of a Kind exists."""
 
-    values = [v[0] for v in hand]
-    value_counter = defaultdict(lambda: 0)
-    for i in values:
-        value_counter[i] += 1
-    key_list = list(value_counter.keys())
-    val_list = list(value_counter.values())
-    if 3 in value_counter.values():
-        return True, key_list[val_list.index(3)]
+# method which determines which player is won
+def determinePlayerWon(playerCards):
+    p1Cards = playerCards[0:14] # get only player1 cards
+    p2Cards = playerCards[15:len(playerCards)] # get only player2 cards
+    
+    p1rank = getRankofPlayer(p1Cards) # get rank of player1
+    p1tied = playersTiedValue # if ranks tied, use this to determine winner
+    p2rank = getRankofPlayer(p2Cards) # get rank of player2
+    p2tied = playersTiedValue # if ranks tied, use this to determine winner
+    
+    # global variables that are initialized in line 11 and 12 
+    # whichever player wins increment their winning count
+    global player1won, player2won
+
+    if (p1rank > p2rank):
+        player1won += 1
+    elif (p1rank < p2rank):
+        player2won += 1
+    elif (p1rank == p2rank and p2rank % 10 == 0):
+            if (p1tied > p2tied):
+                player1won += 1
+            elif (p1tied < p2tied):
+                player2won += 1
+            else:
+                highCardTieBreaker(getCardsValueIndex(p1Cards), getCardsValueIndex(p2Cards))
     else:
-        return False, None
+        highCardTieBreaker(getCardsValueIndex(p1Cards), getCardsValueIndex(p2Cards))
 
 
-def straight(hand):
 
-    """This funtion will check whether a Straight is present in the hand or not.
-    It will give 1 output which is a boolean value."""
+# How to run?
+# For windows, in the root folder of this project, open cmd
+# Run the command -> 'python PokerHandSorter_Sharan.py poker-hands.txt'
+# For testing -> 'python PokerHandSorter_Sharan.py poker-hands-test.txt'
 
-    values = [v[0] for v in hand]
-    values_only_numbers = []
-    for i in values:
-        values_only_numbers.append(card_sequence[i])
-    if sorted(values_only_numbers) == [
-        k for k in range(min(values_only_numbers), max(values_only_numbers) + 1)
-    ]:
-        return True
-    else:
-        return False
+# reads the string passed as first argument
+inFile = sys.argv[1]
 
 
-def flush(hand):
-
-    """This funtion will check whether a Flush is present in the hand or not.
-    It will give 1 output which is a boolean value."""
-
-    suits = [s[1] for s in hand]
-    if len(set(suits)) == 1:
-        return True
-    else:
-        return False
+# open the file whose name matches first argument
+with open(inFile, 'r') as cards:
+    playerCardsList = cards.read().splitlines() # convert all lines to list
 
 
-def full_house(hand):
-
-    """This funtion will check whether a Full House is present in the hand or not.
-    It will give 1 output which is a boolean value."""
-
-    if one_pair(hand)[0] and three_of_kind(hand)[0]:
-        return True
-    else:
-        return False
+# Iterate through each item in the list and pass it 
+for playerCards in playerCardsList:
+    determinePlayerWon(playerCards) # pass each item to this function to know which player won
 
 
-def four_of_kind(hand):
-
-    """This funtion will check whether a Four of a Kind is present in the hand or not.
-    It will give 2 outputs. The first one is a boolean value and the 2nd one is a card value whose Four of a Kind exists."""
-
-    values = [v[0] for v in hand]
-    value_counter = defaultdict(lambda: 0)
-    for i in values:
-        value_counter[i] += 1
-    key_list = list(value_counter.keys())
-    val_list = list(value_counter.values())
-    if 4 in value_counter.values():
-        return True, key_list[val_list.index(4)]
-    else:
-        return False, None
-
-
-def straight_flush(hand):
-
-    """This funtion will check whether a Straight Flush is present in the hand or not.
-    It will give 1 output which is a boolean value."""
-
-    if straight(hand) and flush(hand):
-        return True
-    else:
-        return False
-
-
-def royal_flush(hand):
-
-    """This funtion will check whether a Royal Flush is present in the hand or not.
-    It will give 1 output which is a boolean value."""
-
-    values = [v[0] for v in hand]
-    values_only_numbers = []
-    for i in values:
-        values_only_numbers.append(card_sequence[i])
-    if straight(hand) and flush(hand):
-        if sorted(values_only_numbers)[0] == 10:
-            return True
-        else:
-            return False
-
-
-def rank_hand(hand):
-
-    """This function will run 9 different functions where each one is checking for a possible combination of five playing cards.
-    Once the combination is found it will then output a suitable rank. The default combination is High Card whose rank is 1."""
-
-    if royal_flush(hand):
-        return 10
-    if straight_flush(hand):
-        return 9
-    if four_of_kind(hand)[0]:
-        return 8
-    if full_house(hand):
-        return 7
-    if flush(hand):
-        return 6
-    if straight(hand):
-        return 5
-    if three_of_kind(hand)[0]:
-        return 4
-    if two_pairs(hand)[0]:
-        return 3
-    if one_pair(hand)[0]:
-        return 2
-    return 1  # High Card
-
-
-def list_comparison(
-    a, b
-):  # a and b have to be list with only numbers for example if it is Ace than its corresponding number would be 14
-
-    """This function will compare two lists of numbers (with no duplicate values). This function helps in determining a winner (tie breaker) based on the highest value of card."""
-
-    listA = sorted(a, reverse=True)
-    listB = sorted(b, reverse=True)
-    for i in range(0, len(a)):
-        if listA[i] != listB[i]:
-            if listA[i] > listB[i]:
-                return "Player1"
-            elif listA[i] < listB[i]:
-                return "Player2"
-            break  # Exit the loop
-        else:
-            continue  # Skip
-
-
-def tie(hand1, hand2, rank):
-
-    """When the ranks are same than this funtion is used as a tie breaker.
-
-    How  does it work ?
-
-    It works by comparing the highest cards in each hand; if the highest cards tie then the next highest cards are compared and so on."""
-
-    values1 = [v[0] for v in hand1]
-    values2 = [v[0] for v in hand2]
-    # Converting card value to their corresponding numeric value using 'card_sequence' dictionary which is defined under the main function.
-    values1_only_numbers = []
-    for i in values1:
-        values1_only_numbers.append(card_sequence[i])
-    values2_only_numbers = []
-    for i in values2:
-        values2_only_numbers.append(card_sequence[i])
-
-    if (
-        rank == 1 or rank == 5 or rank == 6 or rank == 9
-    ):  # High Card, Straight, Flush and Straight Flush
-        return list_comparison(values1_only_numbers, values2_only_numbers)
-
-    if rank == 2:  # One Pair
-        a1, b1 = one_pair(hand1)
-        a2, b2 = one_pair(hand2)
-        b1 = card_sequence[b1]
-        b2 = card_sequence[b2]
-        # Compare the values whose pair exist in the hand
-        if b1 > b2:
-            return "Player1"
-        elif b1 < b2:
-            return "Player2"
-        # If the pair card value in both players is the same than remove those card values from their respective lists and then compare the next highest card to determine a winner.
-        elif b1 == b2:
-            values1_only_numbers.remove(b1)
-            values1_only_numbers.remove(b1)
-            values2_only_numbers.remove(b2)
-            values2_only_numbers.remove(b2)
-            return list_comparison(values1_only_numbers, values2_only_numbers)
-
-    if rank == 3:  # Two Pairs
-
-        a1, b1, c1 = two_pairs(hand1)
-        a2, b2, c2 = two_pairs(hand2)
-        b1a = card_sequence[b1[0]]
-        b1b = card_sequence[b1[1]]
-        b2a = card_sequence[b2[0]]
-        b2b = card_sequence[b2[1]]
-        c1 = card_sequence[c1]
-        c2 = card_sequence[c2]
-        b1_numbers = sorted([b1a, b1b])
-        b2_numbers = sorted([b2a, b2b])
-        # Compare the corresponding pair value to determine a winner
-        if b1_numbers[0] > b2_numbers[0]:
-            return "Player1"
-        elif b1_numbers[0] < b2_numbers[0]:
-            return "Player2"
-        elif b1_numbers[1] > b2_numbers[1]:
-            return "Player1"
-        elif b1_numbers[1] < b2_numbers[1]:
-            return "Player2"
-        # If Two Pair values are same for both players than compare the leftover card to determine a winner.
-        elif c1 > c2:
-            return "Player1"
-        elif c1 < c2:
-            return "Player2"
-
-    if rank == 4:  # Three of a kind
-        a1, b1 = three_of_kind(hand1)
-        a2, b2 = three_of_kind(hand2)
-        b1 = card_sequence[b1]
-        b2 = card_sequence[b2]
-        # Compare the card value whose Three of a Kind exists. No need to compare the remaining 2 cards in the hand as there is no chance for these card values to be same.
-        if b1 > b2:
-            return "Player1"
-        elif b1 < b2:
-            return "Player2"
-
-    if rank == 7:  # Full House
-        a1, b1 = three_of_kind(hand1)
-        a2, b2 = three_of_kind(hand2)
-        c1, d1 = one_pair(hand1)
-        c2, d2 = one_pair(hand2)
-        b1 = card_sequence[b1]
-        b2 = card_sequence[b2]
-        d1 = card_sequence[d1]
-        d2 = card_sequence[d2]
-        # Compare the Three of a Kind card value
-        if b1 > b2:
-            return "Player1"
-        elif b1 < b2:
-            return "Player2"
-        # Compare the card value that has a pair in the hand.
-        elif d1 > d2:
-            return "Player1"
-        elif d1 < d2:
-            return "Player2"
-
-    if rank == 8:  # Four of a Kind
-        a1, b1 = four_of_kind(hand1)
-        a2, b2 = four_of_kind(hand2)
-        b1 = card_sequence[b1]
-        b2 = card_sequence[b2]
-        # Compare the Four of a Kind card value.
-        if b1 > b2:
-            return "Player1"
-        elif b1 < b2:
-            return "Player2"
-
-
-if __name__ == "__main__":
-
-    card_sequence = {
-        "2": 2,
-        "3": 3,
-        "4": 4,
-        "5": 5,
-        "6": 6,
-        "7": 7,
-        "8": 8,
-        "9": 9,
-        "T": 10,
-        "J": 11,
-        "Q": 12,
-        "K": 13,
-        "A": 14,
-    }  # This dictionary helps in converting the hand of 5 playing cards to corresponding numeric values which helps in comparison whenever there is a tie.
-    win_counter = {"Player1": 0, "Player2": 0}
-
-    # Change filepath for different results
-    filepath = "poker-hands.txt"
-    hands = []
-    with open(filepath, "r") as file_content:
-        hands = file_content.readlines()
-
-    for line in hands:
-        line_updated = line.strip().split()
-        player1_cards = line_updated[:5]
-        player2_cards = line_updated[5:]
-
-        # Ranks are different
-
-        if rank_hand(player1_cards) > rank_hand(player2_cards):
-            win_counter["Player1"] += 1
-        elif rank_hand(player1_cards) < rank_hand(player2_cards):
-            win_counter["Player2"] += 1
-
-        # Ranks are same than check for the highest card in each hand
-
-        elif rank_hand(player1_cards) == rank_hand(player2_cards):
-            rank = rank_hand(
-                player1_cards
-            )  # You can even change the parameter to player2_cards and the result will be same as the rank for both players are same
-            winner = tie(player1_cards, player2_cards, rank)
-            if winner == "Player1":
-                win_counter["Player1"] += 1
-            elif winner == "Player2":
-                win_counter["Player2"] += 1
-
-    print(
-        win_counter
-    )  # The output is a dictionary summarizing the number of wins by each player.
+# Print the number of hands of each player won in game
+print("Player 1: " + str(player1won))
+print("Player 2: " + str(player2won))
